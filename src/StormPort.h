@@ -75,9 +75,13 @@
   #include <unistd.h>
   #include <fcntl.h>
   #include <stdlib.h>
+  #include <stdio.h>
+  #include <string.h>
+  #include <ctype.h>
+  #include <assert.h>
   #include <errno.h>
 
-  // Support for PowerPC on Max OS X
+  // Support for PowerPC on Mac OS X
   #if (__ppc__ == 1) || (__POWERPC__ == 1) || (_ARCH_PPC == 1)
     #include <stdint.h>
     #include <CoreFoundation/CFByteOrder.h>
@@ -121,6 +125,26 @@
 
 #endif
 
+#if !defined(PLATFORM_DEFINED) && defined(__AMIGA__)
+
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+  #include <unistd.h>
+  #include <stdint.h>
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <stdarg.h>
+  #include <string.h>
+  #include <ctype.h>
+  #include <assert.h>
+  #include <errno.h>
+
+  #define PLATFORM_AMIGA
+  #define PLATFORM_DEFINED
+
+#endif
+
 //-----------------------------------------------------------------------------
 // Assumption: we are not on Windows nor Macintosh, so this must be linux *grin*
 
@@ -140,7 +164,10 @@
   #include <assert.h>
   #include <errno.h>
 
-  #define PLATFORM_LITTLE_ENDIAN
+  #ifndef __BIG_ENDIAN__
+    #define PLATFORM_LITTLE_ENDIAN
+  #endif
+
   #define PLATFORM_LINUX
   #define PLATFORM_DEFINED
 
@@ -157,9 +184,11 @@
   #endif
 
   // Typedefs for ANSI C
+  #ifndef PLATFORM_AMIGA
   typedef unsigned char  BYTE;
-  typedef unsigned short USHORT;
   typedef int            LONG;
+  #endif
+  typedef unsigned short USHORT;
   typedef unsigned int   DWORD;
   typedef unsigned long  DWORD_PTR;
   typedef long           LONG_PTR;
@@ -191,7 +220,7 @@
     #define _countof(x)  (sizeof(x) / sizeof(x[0]))
   #endif
 
-  #define WINAPI
+  #define WINAPI __attribute__((stdcall))
 
   #define FILE_BEGIN    SEEK_SET
   #define FILE_CURRENT  SEEK_CUR
@@ -218,7 +247,7 @@
 #endif // !PLATFORM_WINDOWS
 
 // 64-bit calls are supplied by "normal" calls on Mac
-#if defined(PLATFORM_MAC) || defined(PLATFORM_HAIKU)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_HAIKU) || defined(PLATFORM_AMIGA)
   #define stat64  stat
   #define fstat64 fstat
   #define lseek64 lseek
@@ -228,7 +257,7 @@
 #endif
 
 // Platform-specific error codes for UNIX-based platforms
-#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX) || defined(PLATFORM_HAIKU)
+#if defined(PLATFORM_MAC) || defined(PLATFORM_LINUX) || defined(PLATFORM_HAIKU) || defined(PLATFORM_AMIGA)
   #define ERROR_SUCCESS                  0
   #define ERROR_FILE_NOT_FOUND           ENOENT
   #define ERROR_ACCESS_DENIED            EPERM
@@ -294,6 +323,7 @@
     #define    BSWAP_ARRAY64_UNSIGNED(a,b)      ConvertUInt64Buffer((a),(b))
     #define    BSWAP_TMPQHEADER(a,b)            ConvertTMPQHeader((a),(b))
     #define    BSWAP_TMPKHEADER(a)              ConvertTMPKHeader((a))
+
 #endif
 
 //-----------------------------------------------------------------------------
@@ -322,5 +352,12 @@
 #define STORMLIB_DEPRECATED_FLAG(type, oldflag, newflag) static type oldflag = (type)newflag;
 #endif
 */
+
+//
+// MINIWIN changes
+//
+
+#define bool int
+extern "C" void TranslateFileName(char* dst, int dstLen, const char* src);
 
 #endif // __STORMPORT_H__

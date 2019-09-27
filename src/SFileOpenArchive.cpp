@@ -118,6 +118,7 @@ static int VerifyMpqTablePositions(TMPQArchive * ha, ULONGLONG FileSize)
     return ERROR_SUCCESS;
 }
 
+
 /*****************************************************************************/
 /* Public functions                                                          */
 /*****************************************************************************/
@@ -159,7 +160,7 @@ bool WINAPI SFileOpenArchive(
     LPBYTE pbHeaderBuffer = NULL;       // Buffer for searching MPQ header
     DWORD dwStreamFlags = (dwFlags & STREAM_FLAGS_MASK);
     bool bIsWarcraft3Map = false;
-    int nError = ERROR_SUCCESS;   
+    int nError = ERROR_SUCCESS;
 
     // Verify the parameters
     if(szMpqName == NULL || *szMpqName == 0 || phMpq == NULL)
@@ -174,6 +175,12 @@ bool WINAPI SFileOpenArchive(
 
     // If not forcing MPQ v 1.0, also use file bitmap
     dwStreamFlags |= (dwFlags & MPQ_OPEN_FORCE_MPQ_V1) ? 0 : STREAM_FLAG_USE_BITMAP;
+
+#ifndef FULL
+    char translatedName[260];
+    TranslateFileName(translatedName, sizeof(translatedName), szMpqName);
+    strcpy(szMpqName, translatedName);
+#endif
 
     // Open the MPQ archive file
     pStream = FileStream_OpenFile(szMpqName, dwStreamFlags);
@@ -227,7 +234,7 @@ bool WINAPI SFileOpenArchive(
 
         // Also remember if this MPQ is a patch
         ha->dwFlags |= (dwFlags & MPQ_OPEN_PATCH) ? MPQ_FLAG_PATCH : 0;
-       
+
         // Limit the header searching to about 130 MB of data
         if(EndOfSearch > 0x08000000)
             EndOfSearch = 0x08000000;
@@ -404,6 +411,7 @@ bool WINAPI SFileOpenArchive(
         nError = BuildFileTable(ha);
     }
 
+#ifdef FULL
     // Load the internal listfile and include it to the file table
     if(nError == ERROR_SUCCESS && (dwFlags & MPQ_OPEN_NO_LISTFILE) == 0)
     {
@@ -429,6 +437,7 @@ bool WINAPI SFileOpenArchive(
             ha->dwFileFlags2 = pFileEntry->dwFlags;
         }
     }
+#endif
 
     // Remember whether the archive has weak signature. Only for MPQs format 1.0.
     if(nError == ERROR_SUCCESS)
@@ -463,6 +472,8 @@ bool WINAPI SFileOpenArchive(
     return (nError == ERROR_SUCCESS);
 }
 
+
+#ifdef FULL
 //-----------------------------------------------------------------------------
 // bool WINAPI SFileSetDownloadCallback(HANDLE, SFILE_DOWNLOAD_CALLBACK, void *);
 //
@@ -521,9 +532,13 @@ bool WINAPI SFileFlushArchive(HANDLE hMpq)
 
         if(ha->dwFlags & MPQ_FLAG_SIGNATURE_NEW)
         {
+#ifdef FULL
             nError = SSignFileCreate(ha);
             if(nError != ERROR_SUCCESS)
                 nResultError = nError;
+#else
+			assert(0);
+#endif
         }
 
         if(ha->dwFlags & (MPQ_FLAG_LISTFILE_NEW | MPQ_FLAG_LISTFILE_FORCE))
@@ -555,9 +570,13 @@ bool WINAPI SFileFlushArchive(HANDLE hMpq)
             // If the archive has weak signature, we need to finish it
             if(ha->dwFileFlags3 != 0)
             {
+#ifdef FULL
                 nError = SSignFileFinish(ha);
                 if(nError != ERROR_SUCCESS)
                     nResultError = nError;
+#else
+				assert(0);
+#endif
             }
         }
 
@@ -570,6 +589,7 @@ bool WINAPI SFileFlushArchive(HANDLE hMpq)
         SetLastError(nResultError);
     return (nResultError == ERROR_SUCCESS);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // bool SFileCloseArchive(HANDLE hMpq);
@@ -592,8 +612,10 @@ bool WINAPI SFileCloseArchive(HANDLE hMpq)
     ha->pfnAddFileCB = NULL;
     ha->pvAddFileUserData = NULL;
 
+#ifdef FULL
     // Flush all unsaved data to the storage
     bResult = SFileFlushArchive(hMpq);
+#endif
 
     // Free all memory used by MPQ archive
     FreeArchiveHandle(ha);

@@ -339,7 +339,7 @@ static int DoMPQSearch(TMPQSearch * hs, SFILE_FIND_DATA * lpFindFileData)
 
     // Start searching with base MPQ
     while(ha != NULL)
-    { 
+    {
         // If the archive has hash table, we need to use hash table
         // in order to catch hash table index and file locale.
         // Note: If multiple hash table entries, point to the same block entry,
@@ -391,11 +391,13 @@ HANDLE WINAPI SFileFindFirstFile(HANDLE hMpq, const char * szMask, SFILE_FIND_DA
     if(szMask == NULL || lpFindFileData == NULL)
         nError = ERROR_INVALID_PARAMETER;
 
+#ifdef FULL
     // Include the listfile into the MPQ's internal listfile
     // Note that if the listfile name is NULL, do nothing because the
     // internal listfile is always included.
     if(nError == ERROR_SUCCESS && szListFile != NULL && *szListFile != 0)
         nError = SFileAddListFile((HANDLE)ha, szListFile);
+#endif
 
     // Allocate the structure for MPQ search
     if(nError == ERROR_SUCCESS)
@@ -439,7 +441,7 @@ HANDLE WINAPI SFileFindFirstFile(HANDLE hMpq, const char * szMask, SFILE_FIND_DA
         FreeMPQSearch(hs);
         SetLastError(nError);
     }
-    
+
     // Return the result value
     return (HANDLE)hs;
 }

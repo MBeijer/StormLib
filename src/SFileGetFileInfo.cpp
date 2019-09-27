@@ -90,7 +90,7 @@ static bool GetFilePatchChain(TMPQFile * hf, void * pvFileInfo, DWORD cbFileInfo
 
     // Give the caller the needed length
     if(pcbLengthNeeded != NULL)
-        pcbLengthNeeded[0] = (DWORD)(cchCharsNeeded * sizeof(TCHAR)); 
+        pcbLengthNeeded[0] = (DWORD)(cchCharsNeeded * sizeof(TCHAR));
 
     // If the caller gave both buffer pointer and data length,
     // try to copy the patch chain
@@ -250,6 +250,7 @@ bool WINAPI SFileGetFileInfo(
             }
             break;
 
+#ifdef FULL
         case SFileMpqHetTableSize:
             ha = IsValidMpqHandle(hMpqOrFile);
             if(ha != NULL)
@@ -338,7 +339,7 @@ bool WINAPI SFileGetFileInfo(
                 }
             }
             break;
-
+#endif
         case SFileMpqHashTableOffset:
             ha = IsValidMpqHandle(hMpqOrFile);
             if(ha != NULL)
@@ -458,6 +459,7 @@ bool WINAPI SFileGetFileInfo(
             }
             break;
 
+#ifdef FULL
         case SFileMpqSignatures:
             ha = IsValidMpqHandle(hMpqOrFile);
             if(ha != NULL && QueryMpqSignatureInfo(ha, &SignatureInfo))
@@ -510,6 +512,7 @@ bool WINAPI SFileGetFileInfo(
                 }
             }
             break;
+#endif
 
         case SFileMpqArchiveSize64:
             ha = IsValidMpqHandle(hMpqOrFile);
@@ -836,8 +839,10 @@ bool WINAPI SFileGetFileInfo(
         // Free the file info if needed
         if(nInfoType == SFILE_INFO_TYPE_ALLOCATED && pvSrcFileInfo != NULL)
             STORM_FREE(pvSrcFileInfo);
+#ifdef FULL
         if(nInfoType == SFILE_INFO_TYPE_TABLE_POINTER && pvSrcFileInfo != NULL)
             SFileFreeFileInfo(pvSrcFileInfo, InfoClass);
+#endif
     }
     else
     {
@@ -854,6 +859,7 @@ bool WINAPI SFileGetFileInfo(
     return (nError == ERROR_SUCCESS);
 }
 
+#ifdef FULL
 bool WINAPI SFileFreeFileInfo(void * pvFileInfo, SFileInfoClass InfoClass)
 {
     switch(InfoClass)
@@ -873,6 +879,7 @@ bool WINAPI SFileFreeFileInfo(void * pvFileInfo, SFileInfoClass InfoClass)
     SetLastError(ERROR_INVALID_PARAMETER);
     return false;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Tries to retrieve the file name
@@ -886,7 +893,7 @@ struct TFileHeader2Ext
     const char * szExt;                 // Supplied extension, if the condition is true
 };
 
-static TFileHeader2Ext data2ext[] = 
+static TFileHeader2Ext data2ext[] =
 {
     {0x00005A4D, 0x0000FFFF, 0x00000000, 0x00000000, "exe"},    // EXE files
     {0x00000006, 0xFFFFFFFF, 0x00000001, 0xFFFFFFFF, "dc6"},    // EXE files
@@ -911,7 +918,7 @@ static TFileHeader2Ext data2ext[] =
     {0x503B4449, 0xFFFFFFFF, 0x3B4C5857, 0xFFFFFFFF, "slk"},    // SLK file (usually starts with "ID;PWXL;N;E")
     {0x61754C1B, 0xFFFFFFFF, 0x00000000, 0x00000000, "lua"},    // Compiled LUA files
     {0x00000000, 0x00000000, 0x00000000, 0x00000000, "xxx"},    // Default extension
-    {0, 0, 0, 0, NULL}                                          // Terminator 
+    {0, 0, 0, 0, NULL}                                          // Terminator
 };
 
 static int CreatePseudoFileName(HANDLE hFile, TFileEntry * pFileEntry, char * szFileName)
@@ -922,7 +929,7 @@ static int CreatePseudoFileName(HANDLE hFile, TFileEntry * pFileEntry, char * sz
     DWORD dwFilePos;                    // Saved file position
 
     // Read the first 2 DWORDs bytes from the file
-    dwFilePos = SFileSetFilePointer(hFile, 0, NULL, FILE_CURRENT);   
+    dwFilePos = SFileSetFilePointer(hFile, 0, NULL, FILE_CURRENT);
     SFileReadFile(hFile, FirstBytes, sizeof(FirstBytes), &dwBytesRead, NULL);
     SFileSetFilePointer(hFile, dwFilePos, NULL, FILE_BEGIN);
 
@@ -938,7 +945,7 @@ static int CreatePseudoFileName(HANDLE hFile, TFileEntry * pFileEntry, char * sz
             if((FirstBytes[0] & data2ext[i].dwOffset00Mask) == data2ext[i].dwOffset00Data &&
                (FirstBytes[1] & data2ext[i].dwOffset04Mask) == data2ext[i].dwOffset04Data)
             {
-                char szPseudoName[20] = "";    
+                char szPseudoName[20] = "";
 
                 // Format the pseudo-name
                 sprintf(szPseudoName, "File%08u.%s", (unsigned int)(pFileEntry - hf->ha->pFileTable), data2ext[i].szExt);

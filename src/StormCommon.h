@@ -20,6 +20,7 @@
 // Include functions from Pkware Data Compression Library
 #include "pklib/pklib.h"
 
+#ifdef FULL
 // Include functions from Huffmann compression
 #include "huffman/huff.h"
 
@@ -55,6 +56,7 @@
 
 // For HashStringJenkins
 #include "jenkins/lookup.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // StormLib private defines
@@ -75,7 +77,7 @@
 
 // Size of each signature type
 #define MPQ_WEAK_SIGNATURE_SIZE                 64
-#define MPQ_STRONG_SIGNATURE_SIZE              256 
+#define MPQ_STRONG_SIGNATURE_SIZE              256
 #define MPQ_STRONG_SIGNATURE_ID         0x5349474E      // ID of the strong signature ("NGIS")
 #define MPQ_SIGNATURE_FILE_SIZE (MPQ_WEAK_SIGNATURE_SIZE + 8)
 

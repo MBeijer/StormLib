@@ -1101,10 +1101,22 @@ int    WINAPI SCompDecompress2(void * pvOutBuffer, int * pcbOutBuffer, void * pv
 //-----------------------------------------------------------------------------
 // Non-Windows support for SetLastError/GetLastError
 
+#ifdef FULL
 #ifndef PLATFORM_WINDOWS
 
 void  SetLastError(DWORD dwErrCode);
 DWORD GetLastError();
+
+#endif
+#else
+
+extern DWORD nLastError;
+
+DWORD WINAPI SErrGetLastError();
+void WINAPI  SErrSetLastError(DWORD dwErrCode);
+
+#define SetLastError SErrSetLastError
+#define GetLastError SErrGetLastError
 
 #endif
 
